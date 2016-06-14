@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -30,22 +29,25 @@ import java.util.concurrent.atomic.AtomicInteger;
  *          The type of the result of the task.
  */
 public class Task<TResult> {
+  public static BoltsExecutors boltsExecutors;
   /**
    * An {@link java.util.concurrent.Executor} that executes tasks in parallel.
    */
-  public static final ExecutorService BACKGROUND_EXECUTOR = BoltsExecutors.background();
+  public static Executor BACKGROUND_EXECUTOR;
 
   /**
    * An {@link java.util.concurrent.Executor} that executes tasks in the current thread unless
    * the stack runs too deep, at which point it will delegate to {@link Task#BACKGROUND_EXECUTOR} in
    * order to trim the stack.
    */
-  private static final Executor IMMEDIATE_EXECUTOR = BoltsExecutors.immediate();
+  private static Executor IMMEDIATE_EXECUTOR;
 
   /**
    * An {@link java.util.concurrent.Executor} that executes tasks on the UI thread.
    */
-  public static final Executor UI_THREAD_EXECUTOR = AndroidExecutors.uiThread();
+  public static Executor UI_THREAD_EXECUTOR;
+
+  public static ScheduledExecutorService SCHEDULED_EXECUTOR;
 
   /**
    * Interface for handlers invoked when a failed {@code Task} is about to be
@@ -86,6 +88,14 @@ public class Task<TResult> {
    */
   public static void setUnobservedExceptionHandler(UnobservedExceptionHandler eh) {
     unobservedExceptionHandler = eh;
+  }
+
+  public static void setBoltsExecutors(BoltsExecutors boltsExecutors) {
+    Task.boltsExecutors = boltsExecutors;
+    BACKGROUND_EXECUTOR = boltsExecutors.background();
+    IMMEDIATE_EXECUTOR = boltsExecutors.immediate();
+    UI_THREAD_EXECUTOR = boltsExecutors.uiTread();
+    SCHEDULED_EXECUTOR = boltsExecutors.scheduled();
   }
 
   private final Object lock = new Object();
@@ -238,7 +248,7 @@ public class Task<TResult> {
    *              negative values are treated as requests for immediate execution.
    */
   public static Task<Void> delay(long delay) {
-    return delay(delay, BoltsExecutors.scheduled(), null);
+    return delay(delay, SCHEDULED_EXECUTOR, null);
   }
 
   /**
@@ -250,7 +260,7 @@ public class Task<TResult> {
    *                          completing the returned task.
    */
   public static Task<Void> delay(long delay, CancellationToken cancellationToken) {
-    return delay(delay, BoltsExecutors.scheduled(), cancellationToken);
+    return delay(delay, SCHEDULED_EXECUTOR, cancellationToken);
   }
 
   /* package */ static Task<Void> delay(long delay, ScheduledExecutorService executor, final CancellationToken cancellationToken) {

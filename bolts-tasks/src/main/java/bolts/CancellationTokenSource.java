@@ -30,7 +30,7 @@ public class CancellationTokenSource implements Closeable {
 
   private final Object lock = new Object();
   private final List<CancellationTokenRegistration> registrations = new ArrayList<>();
-  private final ScheduledExecutorService executor = BoltsExecutors.scheduled();
+  private final ScheduledExecutorService executor = Task.SCHEDULED_EXECUTOR;
   private ScheduledFuture<?> scheduledCancellation;
   private boolean cancellationRequested;
   private boolean closed;
